@@ -1,45 +1,56 @@
 #include "../inc/Button.hpp"
+#include <stdio.h>
 
-ImageButton::ImageButton(int x, int y, int width, int height, const char* text, const char* texturePath, float scale) {
-    this->x = x;
-    this->y = y;
-    this->width = width;
-    this->height = height;
-    this->text = text;
-
-    Image img = LoadImage(texturePath);
-    int originalWidth = img.width;
-    int originalHeight = img.height;
-
-    int newWidth = originalWidth * scale;
-    int newHeight = originalHeight * scale;
-
-    ImageResize(&img, newWidth, newHeight);
-    texture = LoadTextureFromImage(img);
-    UnloadImage(img);
+Button::Button(Color _color, Vector2 _pos, int _height, int _width, KeyboardKey _key, const char* _sound_path) { 
+    sound_path = _sound_path;
+    color = _color;
+    squareColor = _color;
+    pos = _pos;
+    height = _height;
+    width = _width;
+    clicked = false;
+    clickTime = 0;
+    key = _key;
+    sound = LoadSound(_sound_path);
 }
 
-void ImageButton::Draw() {
-    DrawTexture(texture, x, y, WHITE);
+void Button::Draw() {
+    DrawRectangle(pos.x, pos.y, width, height, color);
+    if (sound_path[13] != 'f' || sound_path[13] != 'b') {
+        DrawRectangleLines(pos.x, pos.y, width, height, BLACK);
+    }
 }
 
-char ImageButton::IsClicked() {
-    Vector2 mousePos = GetMousePosition();
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && mousePos.x >= x && mousePos.x <= GetScreenWidth() && mousePos.y >= y && mousePos.y <= GetScreenHeight()) {
+void Button::Update() {
+    // Update
+    if (IsClick()) {
+        clicked = true;
+        PlaySound(sound);
+        clickTime = GetTime(); 
+    }
+
+    if (clicked) {
+        color = GRAY;
+        if (GetTime() - clickTime > 0.1) { 
+            clicked = false;
+            color = squareColor;
+        }
+    } else {
+        color = squareColor; 
+    }
+}
+
+boolean Button::IsClick() {
+    Vector2 mouse_pos = GetMousePosition();
+
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if (mouse_pos.x >= pos.x && mouse_pos.x <= pos.x + width && mouse_pos.y >= pos.y && mouse_pos.y <= pos.y + height) {
+            return true;
+        }
+    }
+
+    if (IsKeyPressed(key)) {
         return true;
     }
     return false;
-}
-
-SimpleButton::SimpleButton(int x, int y, int width, int height, const char* text) {
-    this->x = x;
-    this->y = y;
-    this->width = width;
-    this->height = height;
-    this->text = text;
-}
-
-void SimpleButton::Draw() {
-    DrawRectangle(x, y, width, height, WHITE);
-    DrawText(text, x + 10, y + 10, 80, BLACK);
 }
